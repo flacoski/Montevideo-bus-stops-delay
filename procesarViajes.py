@@ -26,6 +26,8 @@ def tipo_dia(fecha):
 
 # retorna la desviacion de segundos entre el horario real y el teorico si aplica.
 # no aplica si no es el mismo tipo de dia o si hay mas de 900 segundos de diferencia
+
+
 def comparar_horarios(horario_real, horario_teorico):
     tipo_dia_teorico = horario_teorico[0]
     hora_teorica = horario_teorico[1]
@@ -45,7 +47,7 @@ def comparar_horas(fecha_hora_real_string, hora_completa_teorica):
         str(hora_teorica) + ":" + str(minutos_teoricos) + ":00", formato_hora).time()
     desviacion = hora_a_segundos(
         datatime_teorico) - hora_a_segundos(fecha_hora_real_string)
-    if abs(desviacion) > 900:
+    if desviacion > 900 or desviacion < -300:
         return None
     else:
         return desviacion
@@ -112,21 +114,26 @@ for parada in lista_paradas_contador.items():
 
 del lista_paradas_contador
 
-# Ordenar las paradas por cantidad de boletos vendidos(descendente) y quedarnos con las 10 primeras paradas por cada avenida
+# Ordenar las paradas por cantidad de boletos vendidos(descendente) y quedarnos con las 15 primeras paradas por cada avenida
 for avenida in lista_paradas_avenida.items():
     paradas_en_orden = sorted(avenida[1], key=lambda x: x[0], reverse=True)
     nombre_avenida = avenida[0]
-    lista_paradas_avenida[nombre_avenida] = paradas_en_orden[0:10]
+    lista_paradas_avenida[nombre_avenida] = paradas_en_orden[0:15]
 
 # key = codigo_parada, values = [tipo_dia,codigo_omnibus,hora_teorica,calle 1]
 lista_horarios_teoricos_parada = {}
 
 # Recorrer los horarios teóricos y quedarnos solo con aquellos que pertenezcan a las paradas relevantes
+contador_ceros = 0
+cant_horarios_teoricos = 0
 archivo_horarios_teoricos = open(ruta_archivo_horarios_teoricos)
 horarios_teoricos = archivo_horarios_teoricos.readlines()
 horarios_teoricos = horarios_teoricos[1:]
 for _horario_teorico in horarios_teoricos:
     horario_teorico = _horario_teorico.split(";")
+    if int(horario_teorico[0]) == 0:
+        contador_ceros += 1
+    cant_horarios_teoricos += 1
     for avenida in lista_paradas_avenida.items():
         paradas_por_avenida = avenida[1]
         for parada in paradas_por_avenida:
@@ -139,7 +146,7 @@ for _horario_teorico in horarios_teoricos:
                 if cod_parada in lista_horarios_teoricos_parada:
                     if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
                         lista_horarios_teoricos_parada[cod_parada][cod_variante].append(
-                            [cod_variante, horario_teorico, nombre_avenida])
+                            [tipo_dia_teorico, horario_teorico, nombre_avenida])
                     else:
                         lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
                             [tipo_dia_teorico, horario_teorico, nombre_avenida]]
@@ -150,6 +157,9 @@ for _horario_teorico in horarios_teoricos:
                 break
 archivo_horarios_teoricos.close()
 
+print(contador_ceros)
+print(cant_horarios_teoricos)
+
 del horarios_teoricos
 
 archivo_viajes = open(ruta_archivo_viajes)
@@ -159,7 +169,7 @@ for _viaje in viajes:
     viaje = _viaje.split(",")
     cod_parada = int(viaje[11])
     cod_variante = int(viaje[16])
-    if cod_parada in lista_horarios_teoricos_parada.keys():
+    if cod_parada in lista_horarios_teoricos_parada:
         if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
             for horario_teorico in lista_horarios_teoricos_parada[cod_parada][cod_variante]:
                 horario_real = viaje[2]
@@ -168,8 +178,12 @@ for _viaje in viajes:
                     for parada in lista_paradas_avenida[lista_horarios_teoricos_parada[cod_parada][cod_variante][0][2]]:
                         if parada[2] == cod_parada:
                             # aca estamos contando todos los boletos que se emiten en una parada
-                            parada[3] += desviacion
+                            parada[3] = (parada[3] * parada[4] +
+                                         desviacion) / (parada[4] + 1)
                             parada[4] += 1
+                    break
+        else:
+            print(cod_variante)
 archivo_viajes.close()
 
 
