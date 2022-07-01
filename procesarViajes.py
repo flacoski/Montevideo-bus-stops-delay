@@ -1,61 +1,18 @@
+from ctypes.util import find_library
 import multiprocessing as mp
 import time
 import pdb
-from datetime import datetime
+import funciones_auxiliares as func
 
-comienzo = time.time()
-numero_de_hilos = 16
+comienzo_tiempo = time.time()
+numero_de_procesos = 4
 ruta_archivo_viajes = "datos/viajes/viajes_stm_052022.csv"
 ruta_archivo_horarios_teoricos = "datos/horariosOmnibus.csv"
+ruta_archivo_horarios_teoricos_circulares = "datos/horariosOmnibusCirculares.csv"
 ruta_archivo_paradas = "datos/ubicacionParadas/paradas.csv"
 ruta_archivo_avenidas = "lista_avenidas"
 
-
-# dado un dia de la semana retorna el tipo de dia:
-#    lunes a viernes: 1
-#    sabado: 2
-#    domingo: 3
-def tipo_dia(fecha):
-    weekday = fecha.weekday()
-    if weekday == 5:
-        return 2
-    elif weekday == 6:
-        return 3
-    else:
-        return 1
-
-# retorna la desviacion de segundos entre el horario real y el teorico si aplica.
-# no aplica si no es el mismo tipo de dia o si hay mas de 900 segundos de diferencia
-
-
-def comparar_horarios(horario_real, horario_teorico):
-    tipo_dia_teorico = horario_teorico[0]
-    hora_teorica = horario_teorico[1]
-    formato_fecha = "%Y-%m-%dT%H:%M:%S.%f%z"
-    fecha_completa = datetime.strptime(horario_real, formato_fecha)
-    # caso borde entre tipos de dia
-    if tipo_dia(fecha_completa.date()) != tipo_dia_teorico:
-        return None
-    return comparar_horas(fecha_completa.time(), hora_teorica)
-
-
-def comparar_horas(fecha_hora_real_string, hora_completa_teorica):
-    formato_hora = "%H:%M:%S"
-    minutos_teoricos = int(hora_completa_teorica % 100)
-    hora_teorica = int((hora_completa_teorica - minutos_teoricos) / 100)
-    datatime_teorico = datetime.strptime(
-        str(hora_teorica) + ":" + str(minutos_teoricos) + ":00", formato_hora).time()
-    desviacion = hora_a_segundos(
-        datatime_teorico) - hora_a_segundos(fecha_hora_real_string)
-    if desviacion > 900 or desviacion < -300:
-        return None
-    else:
-        return desviacion
-
-
-def hora_a_segundos(hora_datetime):
-    return(hora_datetime.hour * 60 + hora_datetime.minute) * 60 + hora_datetime.second
-
+cola_res = mp.Queue()
 
 lista_avenidas = ["AV GRAL RIVERA"]
 
@@ -107,10 +64,12 @@ for parada in lista_paradas_contador.items():
     cod_parada = parada[0]
     if nombre_avenida in lista_paradas_avenida:
         lista_paradas_avenida[nombre_avenida].append(
-            [cant_boletos_vendidos, calle_2, cod_parada, 0, 0])
+            [cant_boletos_vendidos, calle_2, cod_parada, 0, 0]
+        )
     else:
         lista_paradas_avenida[nombre_avenida] = [
-            [cant_boletos_vendidos, calle_2, cod_parada, 0, 0]]
+            [cant_boletos_vendidos, calle_2, cod_parada, 0, 0]
+        ]
 
 del lista_paradas_contador
 
@@ -120,20 +79,16 @@ for avenida in lista_paradas_avenida.items():
     nombre_avenida = avenida[0]
     lista_paradas_avenida[nombre_avenida] = paradas_en_orden[0:15]
 
-# key = codigo_parada, values = [tipo_dia,codigo_omnibus,hora_teorica,calle 1]
+# key = codigo_parada, value = diccionario_parada
+# diccionario_parada: key = cod_parada, values = [tipo_dia_teorico, horario_teorico, nombre_avenida]
 lista_horarios_teoricos_parada = {}
 
 # Recorrer los horarios teóricos y quedarnos solo con aquellos que pertenezcan a las paradas relevantes
-contador_ceros = 0
-cant_horarios_teoricos = 0
 archivo_horarios_teoricos = open(ruta_archivo_horarios_teoricos)
 horarios_teoricos = archivo_horarios_teoricos.readlines()
 horarios_teoricos = horarios_teoricos[1:]
 for _horario_teorico in horarios_teoricos:
     horario_teorico = _horario_teorico.split(";")
-    if int(horario_teorico[0]) == 0:
-        contador_ceros += 1
-    cant_horarios_teoricos += 1
     for avenida in lista_paradas_avenida.items():
         paradas_por_avenida = avenida[1]
         for parada in paradas_por_avenida:
@@ -146,47 +101,149 @@ for _horario_teorico in horarios_teoricos:
                 if cod_parada in lista_horarios_teoricos_parada:
                     if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
                         lista_horarios_teoricos_parada[cod_parada][cod_variante].append(
-                            [tipo_dia_teorico, horario_teorico, nombre_avenida])
+                            [tipo_dia_teorico, horario_teorico, nombre_avenida]
+                        )
                     else:
                         lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
-                            [tipo_dia_teorico, horario_teorico, nombre_avenida]]
+                            [tipo_dia_teorico, horario_teorico, nombre_avenida]
+                        ]
                 else:
                     lista_horarios_teoricos_parada[cod_parada] = {}
                     lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
-                        [tipo_dia_teorico, horario_teorico, nombre_avenida]]
+                        [tipo_dia_teorico, horario_teorico, nombre_avenida]
+                    ]
                 break
 archivo_horarios_teoricos.close()
-
-print(contador_ceros)
-print(cant_horarios_teoricos)
-
 del horarios_teoricos
+
+# # Recorrer los horarios teóricos circulares y quedarnos solo con aquellos que pertenezcan a las paradas relevantes
+# archivo_horarios_teoricos_circulares = open(ruta_archivo_horarios_teoricos_circulares)
+# horarios_teoricos_circulares = archivo_horarios_teoricos_circulares.readlines()
+# horarios_teoricos_circulares = horarios_teoricos_circulares[1:]
+# for _horario_teorico_circular in horarios_teoricos_circulares:
+#     horario_teorico = _horario_teorico_circular.split(";")
+#     for avenida in lista_paradas_avenida.items():
+#         paradas_por_avenida = avenida[1]
+#         for parada in paradas_por_avenida:
+#             cod_parada = int(horario_teorico[3])
+#             if cod_parada == parada[2]:
+#                 tipo_dia_teorico = int(horario_teorico[0])
+#                 cod_variante = int(horario_teorico[4])
+#                 horario_teorico = int(horario_teorico[7])
+#                 nombre_avenida = avenida[0]
+#                 if cod_parada in lista_horarios_teoricos_parada:
+#                     if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
+#                         lista_horarios_teoricos_parada[cod_parada][cod_variante].append(
+#                             [tipo_dia_teorico, horario_teorico, nombre_avenida])
+#                     else:
+#                         lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
+#                             [tipo_dia_teorico, horario_teorico, nombre_avenida]]
+#                 else:
+#                     lista_horarios_teoricos_parada[cod_parada] = {}
+#                     lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
+#                         [tipo_dia_teorico, horario_teorico, nombre_avenida]]
+#                 break
+# archivo_horarios_teoricos.close()
+# del horarios_teoricos_circulares
+
+
+def calcular_desviacion(viajes, cola):
+    print("adentro")
+    res_parcial_avenida = {}
+    for _viaje in viajes:
+        viaje = _viaje.split(",")
+        cod_parada = int(viaje[11])
+        cod_variante = int(viaje[16])
+        if cod_parada in lista_horarios_teoricos_parada:
+            if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
+                for horario_teorico in lista_horarios_teoricos_parada[cod_parada][
+                    cod_variante
+                ]:
+                    horario_real = viaje[2]
+                    desviacion = func.comparar_horarios(horario_real, horario_teorico)
+                    if desviacion != None:
+                        nombre_avenida = lista_horarios_teoricos_parada[cod_parada][
+                            cod_variante
+                        ][0][2]
+                        if nombre_avenida in res_parcial_avenida:
+                            if cod_parada in res_parcial_avenida[nombre_avenida]:
+                                if (
+                                    cod_variante
+                                    in res_parcial_avenida[nombre_avenida][cod_parada]
+                                ):
+                                    res_parcial_avenida[nombre_avenida][cod_parada][
+                                        cod_variante
+                                    ][0] = (
+                                        res_parcial_avenida[nombre_avenida][cod_parada][
+                                            cod_variante
+                                        ][0]
+                                        * res_parcial_avenida[nombre_avenida][
+                                            cod_parada
+                                        ][cod_variante][1]
+                                        + desviacion
+                                    ) / (
+                                        res_parcial_avenida[nombre_avenida][cod_parada][
+                                            cod_variante
+                                        ][1]
+                                        + 1
+                                    )
+                                    res_parcial_avenida[nombre_avenida][cod_parada][
+                                        cod_variante
+                                    ][1] += 1
+                                else:
+                                    res_parcial_avenida[nombre_avenida][cod_parada][
+                                        cod_variante
+                                    ] = [
+                                        desviacion,
+                                        1,
+                                        viaje[13] + " " + viaje[15],
+                                    ]  # desviacion,cantidad,linea y empresa
+                            else:
+                                res_parcial_avenida[nombre_avenida][cod_parada] = {}
+                                res_parcial_avenida[nombre_avenida][cod_parada][
+                                    cod_variante
+                                ] = [
+                                    desviacion,
+                                    1,
+                                    viaje[13] + " " + viaje[15],
+                                ]  # desviacion,cantidad,linea y empresa
+                        else:
+                            res_parcial_avenida[nombre_avenida] = {}
+                            res_parcial_avenida[nombre_avenida][cod_parada] = {}
+                            res_parcial_avenida[nombre_avenida][cod_parada][
+                                cod_variante
+                            ] = [
+                                desviacion,
+                                1,
+                                viaje[13] + " " + viaje[15],
+                            ]  # desviacion,cantidad,linea y empresa
+    print(res_parcial_avenida)
+    cola.put(res_parcial_avenida)
+
 
 archivo_viajes = open(ruta_archivo_viajes)
 viajes = archivo_viajes.readlines()
 viajes = viajes[1:]
-for _viaje in viajes:
-    viaje = _viaje.split(",")
-    cod_parada = int(viaje[11])
-    cod_variante = int(viaje[16])
-    if cod_parada in lista_horarios_teoricos_parada:
-        if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
-            for horario_teorico in lista_horarios_teoricos_parada[cod_parada][cod_variante]:
-                horario_real = viaje[2]
-                desviacion = comparar_horarios(horario_real, horario_teorico)
-                if desviacion != None:
-                    for parada in lista_paradas_avenida[lista_horarios_teoricos_parada[cod_parada][cod_variante][0][2]]:
-                        if parada[2] == cod_parada:
-                            # aca estamos contando todos los boletos que se emiten en una parada
-                            parada[3] = (parada[3] * parada[4] +
-                                         desviacion) / (parada[4] + 1)
-                            parada[4] += 1
-                    break
-        else:
-            print(cod_variante)
-archivo_viajes.close()
+cant_calculos = int(len(viajes) / numero_de_procesos)
+procesos = []
+for i in range(numero_de_procesos):
+    comienzo = i * cant_calculos
+    fin = comienzo + cant_calculos if i != numero_de_procesos - 1 else len(viajes)
+    # calcular_desviacion(viajes,comienzo,fin)
+    procesos.append(
+        mp.Process(target=calcular_desviacion, args=(viajes[comienzo:fin], cola_res))
+    )
+    print(comienzo)
+    print(fin)
 
+for p in procesos:
+    p.start()
 
-final = time.time()
-print(lista_paradas_avenida)
-print(final-comienzo)
+for p in procesos:
+    p.join()
+    
+archivo_viajes.close()    
+    
+final_tiempo = time.time()
+
+print(final_tiempo - comienzo_tiempo)
