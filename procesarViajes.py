@@ -5,7 +5,7 @@ import pdb
 import funciones_auxiliares as func
 
 comienzo_tiempo = time.time()
-numero_de_procesos = 4
+numero_de_procesos = 1
 ruta_archivo_viajes = "datos/viajes/viajes_stm_052022.csv"
 ruta_archivo_horarios_teoricos = "datos/horariosOmnibus.csv"
 ruta_archivo_horarios_teoricos_circulares = "datos/horariosOmnibusCirculares.csv"
@@ -23,7 +23,7 @@ lista_avenidas = ["AV GRAL RIVERA"]
 #     lista_avenidas.append(fila.rstrip('\n'))
 # archivo_avenidas.close()
 
-# key = codigo_parada, values = [contador,calle 1, calle 2]
+# key = codigo_parada, values = [contador_viajes,calle 1, calle 2]
 lista_paradas_contador = {}
 
 # Recorremos las paradas y nos quedamos con las que pertenecen a las calles elegidas
@@ -142,13 +142,104 @@ del horarios_teoricos
 #                     lista_horarios_teoricos_parada[cod_parada] = {}
 #                     lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
 #                         [tipo_dia_teorico, horario_teorico, nombre_avenida]]
-#                 break
 # archivo_horarios_teoricos.close()
 # del horarios_teoricos_circulares
 
 
+def agregar_desviacion(res_parcial_avenida, nombre_avenida, cod_parada, cod_variante, desviacion, linea_empresa):
+    if nombre_avenida in res_parcial_avenida:
+        if cod_parada in res_parcial_avenida[nombre_avenida]:
+            if (
+                cod_variante
+                in res_parcial_avenida[nombre_avenida][cod_parada]
+            ):
+                res_parcial_avenida[nombre_avenida][cod_parada][
+                    cod_variante
+                ][0] = (
+                    res_parcial_avenida[nombre_avenida][cod_parada][
+                        cod_variante
+                    ][0]
+                    * res_parcial_avenida[nombre_avenida][
+                        cod_parada
+                    ][cod_variante][1]
+                    + desviacion
+                ) / (
+                    res_parcial_avenida[nombre_avenida][cod_parada][
+                        cod_variante
+                    ][1]
+                    + 1
+                )
+                res_parcial_avenida[nombre_avenida][cod_parada][
+                    cod_variante
+                ][1] += 1
+            else:
+                res_parcial_avenida[nombre_avenida][cod_parada][
+                    cod_variante
+                ] = [
+                    desviacion,
+                    1,
+                    linea_empresa,
+                ]  # desviacion,cantidad,linea y empresa
+        else:
+            res_parcial_avenida[nombre_avenida][cod_parada] = {
+            }
+            res_parcial_avenida[nombre_avenida][cod_parada][
+                cod_variante
+            ] = [
+                desviacion,
+                1,
+                linea_empresa,
+            ]  # desviacion,cantidad,linea y empresa
+    else:
+        res_parcial_avenida[nombre_avenida] = {}
+        res_parcial_avenida[nombre_avenida][cod_parada] = {
+        }
+        res_parcial_avenida[nombre_avenida][cod_parada][
+            cod_variante
+        ] = [
+            desviacion,
+            1,
+            linea_empresa,
+        ]  # desviacion,cantidad,linea y empresa
+
+
+def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
+    print(lista_horarios)
+    print(horario_teorico)
+    print(index_horario)
+    cant_horarios_posteriores = 0
+    horarios_cercanos_posteriores = []
+    idx_proximo_horario = (index_horario+1) % len(lista_horarios)
+    for horario_posterior in lista_horarios[idx_proximo_horario:]:
+        if horario_posterior[0] == horario_teorico[0]:
+            cant_horarios_posteriores += 1
+            horarios_cercanos_posteriores.append(
+                func.hora_int_a_datetime(horario_posterior[1]))
+        if cant_horarios_posteriores == 2:
+            break
+
+    horarios_cercanos_anteriores = []
+    cant_horarios_anteriores = 0
+    idx_anterior_horario = ((index_horario-1) % len(lista_horarios)) + 1
+    for horario_anterior in reversed(lista_horarios[:idx_anterior_horario]):
+        if horario_anterior[0] == horario_teorico[0]:
+            cant_horarios_anteriores += 1
+            horarios_cercanos_anteriores.append(
+                func.hora_int_a_datetime(horario_anterior[1]))
+            if cant_horarios_anteriores == 1:
+                break
+
+    print("cant_horarios_anteriores: ")
+    print(cant_horarios_anteriores)
+    print("cant_horarios_posteriores: ")
+    print(cant_horarios_posteriores)
+    print("horarios cercanos: ")
+    print(horarios_cercanos)
+
+    return
+
+
 def calcular_desviacion(viajes, cola):
-    print("adentro")
     res_parcial_avenida = {}
     for _viaje in viajes:
         viaje = _viaje.split(",")
@@ -156,94 +247,48 @@ def calcular_desviacion(viajes, cola):
         cod_variante = int(viaje[16])
         if cod_parada in lista_horarios_teoricos_parada:
             if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
-                for horario_teorico in lista_horarios_teoricos_parada[cod_parada][
-                    cod_variante
-                ]:
+                lista_horarios_teoricos_parada[cod_parada][cod_variante].sort()
+                horarios_teoricos_ordenados = sorted(
+                    lista_horarios_teoricos_parada[cod_parada][cod_variante], key=lambda x: x[1])
+                for index_horario, horario_teorico in enumerate(horarios_teoricos_ordenados):
+                    frecuencia = calcular_frecuencia(
+                        horario_teorico, index_horario, horarios_teoricos_ordenados)
                     horario_real = viaje[2]
-                    desviacion = func.comparar_horarios(horario_real, horario_teorico)
+                    desviacion = func.comparar_horarios(
+                        horario_real, horario_teorico, frecuencia)
                     if desviacion != None:
                         nombre_avenida = lista_horarios_teoricos_parada[cod_parada][
                             cod_variante
                         ][0][2]
-                        if nombre_avenida in res_parcial_avenida:
-                            if cod_parada in res_parcial_avenida[nombre_avenida]:
-                                if (
-                                    cod_variante
-                                    in res_parcial_avenida[nombre_avenida][cod_parada]
-                                ):
-                                    res_parcial_avenida[nombre_avenida][cod_parada][
-                                        cod_variante
-                                    ][0] = (
-                                        res_parcial_avenida[nombre_avenida][cod_parada][
-                                            cod_variante
-                                        ][0]
-                                        * res_parcial_avenida[nombre_avenida][
-                                            cod_parada
-                                        ][cod_variante][1]
-                                        + desviacion
-                                    ) / (
-                                        res_parcial_avenida[nombre_avenida][cod_parada][
-                                            cod_variante
-                                        ][1]
-                                        + 1
-                                    )
-                                    res_parcial_avenida[nombre_avenida][cod_parada][
-                                        cod_variante
-                                    ][1] += 1
-                                else:
-                                    res_parcial_avenida[nombre_avenida][cod_parada][
-                                        cod_variante
-                                    ] = [
-                                        desviacion,
-                                        1,
-                                        viaje[13] + " " + viaje[15],
-                                    ]  # desviacion,cantidad,linea y empresa
-                            else:
-                                res_parcial_avenida[nombre_avenida][cod_parada] = {}
-                                res_parcial_avenida[nombre_avenida][cod_parada][
-                                    cod_variante
-                                ] = [
-                                    desviacion,
-                                    1,
-                                    viaje[13] + " " + viaje[15],
-                                ]  # desviacion,cantidad,linea y empresa
-                        else:
-                            res_parcial_avenida[nombre_avenida] = {}
-                            res_parcial_avenida[nombre_avenida][cod_parada] = {}
-                            res_parcial_avenida[nombre_avenida][cod_parada][
-                                cod_variante
-                            ] = [
-                                desviacion,
-                                1,
-                                viaje[13] + " " + viaje[15],
-                            ]  # desviacion,cantidad,linea y empresa
-    print(res_parcial_avenida)
+                        linea_empresa = viaje[13] + " " + viaje[15]
+                        agregar_desviacion(res_parcial_avenida, nombre_avenida,
+                                           cod_parada, cod_variante, desviacion, linea_empresa)
     cola.put(res_parcial_avenida)
 
 
 archivo_viajes = open(ruta_archivo_viajes)
 viajes = archivo_viajes.readlines()
 viajes = viajes[1:]
-cant_calculos = int(len(viajes) / numero_de_procesos)
+cant_viajes_por_proceso = int(len(viajes) / numero_de_procesos)
 procesos = []
-for i in range(numero_de_procesos):
-    comienzo = i * cant_calculos
-    fin = comienzo + cant_calculos if i != numero_de_procesos - 1 else len(viajes)
-    # calcular_desviacion(viajes,comienzo,fin)
+for nro_proceso in range(numero_de_procesos):
+    comienzo = nro_proceso * cant_viajes_por_proceso
+    fin = comienzo + cant_viajes_por_proceso if nro_proceso != numero_de_procesos - \
+        1 else len(viajes)
     procesos.append(
-        mp.Process(target=calcular_desviacion, args=(viajes[comienzo:fin], cola_res))
+        mp.Process(target=calcular_desviacion, args=(
+            viajes[comienzo:fin], cola_res))
     )
-    print(comienzo)
-    print(fin)
 
 for p in procesos:
     p.start()
 
 for p in procesos:
     p.join()
-    
-archivo_viajes.close()    
-    
+
+archivo_viajes.close()
+
+
 final_tiempo = time.time()
 
 print(final_tiempo - comienzo_tiempo)
