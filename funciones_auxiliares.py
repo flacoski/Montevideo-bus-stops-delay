@@ -5,6 +5,8 @@ from itertools import islice, cycle
 #    lunes a viernes: 1
 #    sabado: 2
 #    domingo: 3
+
+
 def tipo_dia(fecha):
     weekday = fecha.weekday()
     if weekday == 5:
@@ -68,6 +70,40 @@ def calcular_promedio_diferencias(lista_horarios):
     return suma_diferencias / largo_lista_horarios
 
 
+def eliminar_outliers(
+    horarios_cercanos, cant_horarios_anteriores, cant_horarios_posteriores
+):
+    index_eliminar = []
+    index_horario_original = cant_horarios_anteriores
+    horario_original = hora_a_segundos(
+        horarios_cercanos[index_horario_original])
+    if cant_horarios_anteriores > 0:
+        for index in range(0, cant_horarios_anteriores):
+            actual = hora_a_segundos(horarios_cercanos[index])
+            diferencia = abs(index_horario_original - index)
+            if horario_original < actual:
+                actual = actual - 86400
+            if abs(horario_original - actual) > 5400 * diferencia:
+                index_eliminar.append(index)
+    if cant_horarios_posteriores > 0:
+        for index in range(
+            len(horarios_cercanos) - 1,
+            len(horarios_cercanos) - cant_horarios_posteriores - 1,
+            -1,
+        ):
+            actual = hora_a_segundos(horarios_cercanos[index])
+            diferencia = abs(index - index_horario_original)
+            if horario_original > actual:
+                actual = actual + 86400
+            if abs(horario_original - actual) > 5400 * diferencia:
+                index_eliminar.append(index)
+    index_eliminar.sort()
+    for index in reversed(index_eliminar):
+        del horarios_cercanos[index]
+
+    return horarios_cercanos
+
+
 def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
     horarios_cercanos = []
     largo_lista_horarios = len(lista_horarios)
@@ -79,9 +115,13 @@ def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
         cycle(reversed(lista_horarios)), idx_anterior_horario, None
     ):
         cont += 1
-        if horario_anterior[0] == horario_teorico[0]:
+        horario_anterior_datetime = hora_int_a_datetime(horario_anterior[1])
+        if (
+            horario_anterior[0] == horario_teorico[0]
+            and horario_anterior_datetime not in horarios_cercanos
+        ):
             cant_horarios_anteriores += 1
-            horarios_cercanos.append(hora_int_a_datetime(horario_anterior[1]))
+            horarios_cercanos.append(horario_anterior_datetime)
             if cant_horarios_anteriores == 1 or cont == 10000:
                 break
 
@@ -91,27 +131,24 @@ def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
     cont = 0
     for horario_posterior in islice(cycle(lista_horarios), index_horario + 1, None):
         cont += 1
-        if horario_posterior[0] == horario_teorico[0]:
+        horario_posterior_datetime = hora_int_a_datetime(horario_posterior[1])
+        if (
+            horario_posterior[0] == horario_teorico[0]
+            and horario_posterior_datetime not in horarios_cercanos
+        ):
             cant_horarios_posteriores += 1
-            horarios_cercanos.append(hora_int_a_datetime(horario_posterior[1]))
+            horarios_cercanos.append(horario_posterior_datetime)
         if cant_horarios_posteriores == 2 or cont == 10000:
             break
 
-    index_eliminar = []
-
-    for index in range(0, len(horarios_cercanos) - 1):
-        index_siguiente = index + 1
-        actual = hora_a_segundos(horarios_cercanos[index])
-        siguiente = hora_a_segundos(horarios_cercanos[index_siguiente])
-        if siguiente < actual:
-            actual = actual - 86400
-        if abs(siguiente - actual) > 5400:
-            index_eliminar.append(index)
-
-    for index in reversed(index_eliminar):
-        del horarios_cercanos[index]
-
-    return calcular_promedio_diferencias(horarios_cercanos)
+    horarios_cercanos = eliminar_outliers(
+        horarios_cercanos, cant_horarios_anteriores, cant_horarios_posteriores
+    )
+    return (
+        calcular_promedio_diferencias(horarios_cercanos)
+        if len(horarios_cercanos) > 1
+        else 15
+    )
 
 
 def agregar_desviacion(
