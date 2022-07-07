@@ -117,8 +117,7 @@ archivo_horarios_teoricos.close()
 del horarios_teoricos
 
 # Recorrer los horarios teóricos circulares y quedarnos solo con aquellos que pertenezcan a las paradas relevantes
-archivo_horarios_teoricos_circulares = open(
-    ruta_archivo_horarios_teoricos_circulares)
+archivo_horarios_teoricos_circulares = open(ruta_archivo_horarios_teoricos_circulares)
 horarios_teoricos_circulares = archivo_horarios_teoricos_circulares.readlines()
 horarios_teoricos_circulares = horarios_teoricos_circulares[1:]
 for _horario_teorico_circular in horarios_teoricos_circulares:
@@ -212,8 +211,7 @@ for nro_proceso in range(numero_de_procesos):
         else len(viajes)
     )
     procesos.append(
-        mp.Process(target=calcular_desviacion, args=(
-            viajes[comienzo:fin], cola_res))
+        mp.Process(target=calcular_desviacion, args=(viajes[comienzo:fin], cola_res))
     )
 
 for p in procesos:

@@ -1,12 +1,14 @@
 from datetime import datetime
 from itertools import islice, cycle
 
+NOVENTA_MINUTOS = 5400
+UN_DIA_EN_SEGUNDOS = 86400
+
+
 # dado un dia de la semana retorna el tipo de dia:
 #    lunes a viernes: 1
 #    sabado: 2
 #    domingo: 3
-
-
 def tipo_dia(fecha):
     weekday = fecha.weekday()
     if weekday == 5:
@@ -33,11 +35,13 @@ def comparar_horarios(horario_real, horario_teorico, frecuencia, margen):
 
 
 def comparar_horas(fecha_hora_real_string, hora_completa_teorica, frecuencia, margen):
-    teo = hora_a_segundos(hora_int_a_datetime(hora_completa_teorica))
-    real = hora_a_segundos(fecha_hora_real_string)
-    if teo < real:
-        real = real - 86400
-    desviacion = teo - real
+    hora_teorica_en_segundos = hora_a_segundos(
+        hora_int_a_datetime(hora_completa_teorica)
+    )
+    hora_real_en_segundos = hora_a_segundos(fecha_hora_real_string)
+    if hora_teorica_en_segundos < hora_real_en_segundos:
+        hora_real_en_segundos = hora_real_en_segundos - UN_DIA_EN_SEGUNDOS
+    desviacion = hora_teorica_en_segundos - hora_real_en_segundos
     if desviacion > frecuencia * margen or desviacion < -frecuencia * (1 - margen):
         return None
     else:
@@ -65,7 +69,7 @@ def calcular_promedio_diferencias(lista_horarios):
         actual = hora_a_segundos(lista_horarios[index])
         siguiente = hora_a_segundos(lista_horarios[index_siguiente])
         if siguiente < actual:
-            actual = actual - 86400
+            actual = actual - UN_DIA_EN_SEGUNDOS
         suma_diferencias += abs(siguiente - actual)
     return suma_diferencias / largo_lista_horarios
 
@@ -75,15 +79,14 @@ def eliminar_outliers(
 ):
     index_eliminar = []
     index_horario_original = cant_horarios_anteriores
-    horario_original = hora_a_segundos(
-        horarios_cercanos[index_horario_original])
+    horario_original = hora_a_segundos(horarios_cercanos[index_horario_original])
     if cant_horarios_anteriores > 0:
         for index in range(0, cant_horarios_anteriores):
             actual = hora_a_segundos(horarios_cercanos[index])
             diferencia = abs(index_horario_original - index)
             if horario_original < actual:
-                actual = actual - 86400
-            if abs(horario_original - actual) > 5400 * diferencia:
+                actual = actual - UN_DIA_EN_SEGUNDOS
+            if abs(horario_original - actual) > NOVENTA_MINUTOS * diferencia:
                 index_eliminar.append(index)
     if cant_horarios_posteriores > 0:
         for index in range(
@@ -94,8 +97,8 @@ def eliminar_outliers(
             actual = hora_a_segundos(horarios_cercanos[index])
             diferencia = abs(index - index_horario_original)
             if horario_original > actual:
-                actual = actual + 86400
-            if abs(horario_original - actual) > 5400 * diferencia:
+                actual = actual + UN_DIA_EN_SEGUNDOS
+            if abs(horario_original - actual) > NOVENTA_MINUTOS * diferencia:
                 index_eliminar.append(index)
     index_eliminar.sort()
     for index in reversed(index_eliminar):
@@ -122,8 +125,8 @@ def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
         ):
             cant_horarios_anteriores += 1
             horarios_cercanos.append(horario_anterior_datetime)
-            if cant_horarios_anteriores == 1 or cont == 10000:
-                break
+        if cant_horarios_anteriores == 1 or cont == largo_lista_horarios:
+            break
 
     horarios_cercanos.append(hora_int_a_datetime(horario_teorico[1]))
 
@@ -138,7 +141,7 @@ def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
         ):
             cant_horarios_posteriores += 1
             horarios_cercanos.append(horario_posterior_datetime)
-        if cant_horarios_posteriores == 2 or cont == 10000:
+        if cant_horarios_posteriores == 2 or cont == largo_lista_horarios:
             break
 
     horarios_cercanos = eliminar_outliers(
