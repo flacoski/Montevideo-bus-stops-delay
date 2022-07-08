@@ -1,8 +1,9 @@
 from ctypes.util import find_library
 import multiprocessing as mp
 import time
-import pdb
 import funciones_auxiliares as func
+
+DEFAULT_MARGEN = 2/3
 
 comienzo_tiempo = time.time()
 numero_de_procesos = 4
@@ -12,7 +13,8 @@ ruta_archivo_horarios_teoricos_circulares = "datos/horariosOmnibusCirculares.csv
 ruta_archivo_paradas = "datos/ubicacionParadas/paradas.csv"
 ruta_archivo_avenidas = "lista_avenidas"
 
-cola_res = mp.Queue()
+manager = mp.Manager()
+cola_res = manager.Queue()
 
 lista_avenidas = ["AV GRAL RIVERA"]
 
@@ -117,7 +119,8 @@ archivo_horarios_teoricos.close()
 del horarios_teoricos
 
 # Recorrer los horarios teóricos circulares y quedarnos solo con aquellos que pertenezcan a las paradas relevantes
-archivo_horarios_teoricos_circulares = open(ruta_archivo_horarios_teoricos_circulares)
+archivo_horarios_teoricos_circulares = open(
+    ruta_archivo_horarios_teoricos_circulares)
 horarios_teoricos_circulares = archivo_horarios_teoricos_circulares.readlines()
 horarios_teoricos_circulares = horarios_teoricos_circulares[1:]
 for _horario_teorico_circular in horarios_teoricos_circulares:
@@ -179,7 +182,7 @@ def calcular_desviacion(viajes, cola):
                     frecuencia = horario_teorico[3]
                     horario_real = viaje[2]
                     desviacion = func.comparar_horarios(
-                        horario_real, horario_teorico, frecuencia, 2 / 3
+                        horario_real, horario_teorico, frecuencia, DEFAULT_MARGEN
                     )
                     if desviacion != None:
                         nombre_avenida = lista_horarios_teoricos_parada[cod_parada][
@@ -211,9 +214,9 @@ for nro_proceso in range(numero_de_procesos):
         else len(viajes)
     )
     procesos.append(
-        mp.Process(target=calcular_desviacion, args=(viajes[comienzo:fin], cola_res))
+        mp.Process(target=calcular_desviacion, args=(
+            viajes[comienzo:fin], cola_res))
     )
-
 for p in procesos:
     p.start()
 
