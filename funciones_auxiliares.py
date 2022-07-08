@@ -41,9 +41,7 @@ def comparar_horas(fecha_hora_real_string, hora_completa_teorica, frecuencia, ma
         hora_int_a_datetime(hora_completa_teorica)
     )
     hora_real_en_segundos = hora_a_segundos(fecha_hora_real_string)
-    if hora_teorica_en_segundos < hora_real_en_segundos:
-        hora_real_en_segundos = hora_real_en_segundos - UN_DIA_EN_SEGUNDOS
-    desviacion = hora_teorica_en_segundos - hora_real_en_segundos
+    desviacion =  hora_real_en_segundos - hora_teorica_en_segundos
     if desviacion > frecuencia * margen or desviacion < -frecuencia * (1 - margen):
         return None
     else:
