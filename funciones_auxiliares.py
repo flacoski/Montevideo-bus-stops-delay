@@ -1,9 +1,10 @@
-from datetime import datetime
+import datetime
 from itertools import islice, cycle
 
-NOVENTA_MINUTOS = 5400
+UNA_HORA = 3600
 UN_DIA_EN_SEGUNDOS = 86400
 DEFAULT_FRECUENCIA_EN_SEGUNDOS = 900
+VEINTITRES_HORAS = 82800
 
 # dado un dia de la semana retorna el tipo de dia:
 #    lunes a viernes: 1
@@ -41,7 +42,13 @@ def comparar_horas(fecha_hora_real_string, hora_completa_teorica, frecuencia, ma
         hora_int_a_datetime(hora_completa_teorica)
     )
     hora_real_en_segundos = hora_a_segundos(fecha_hora_real_string)
-    desviacion =  hora_real_en_segundos - hora_teorica_en_segundos
+    if hora_real_en_segundos > VEINTITRES_HORAS and hora_teorica_en_segundos < UNA_HORA:
+        hora_teorica_en_segundos += UN_DIA_EN_SEGUNDOS
+    elif (
+        hora_teorica_en_segundos > VEINTITRES_HORAS and hora_real_en_segundos < UNA_HORA
+    ):
+        hora_real_en_segundos += UN_DIA_EN_SEGUNDOS
+    desviacion = hora_real_en_segundos - hora_teorica_en_segundos
     if desviacion > frecuencia * margen or desviacion < -frecuencia * (1 - margen):
         return None
     else:
@@ -52,7 +59,7 @@ def hora_int_a_datetime(hora_int):
     formato_hora = "%H:%M:%S"
     minutos_teoricos = int(hora_int % 100)
     hora_teorica = int((hora_int - minutos_teoricos) / 100)
-    return datetime.strptime(
+    return datetime.datetime.strptime(
         str(hora_teorica) + ":" + str(minutos_teoricos) + ":00", formato_hora
     ).time()
 
@@ -79,29 +86,28 @@ def eliminar_outliers(
 ):
     index_eliminar = []
     index_horario_original = cant_horarios_anteriores
-    horario_original = hora_a_segundos(
-        horarios_cercanos[index_horario_original])
+    horario_original = hora_a_segundos(horarios_cercanos[index_horario_original])
     if cant_horarios_anteriores > 0:
         for index in range(0, cant_horarios_anteriores):
             actual = hora_a_segundos(horarios_cercanos[index])
             diferencia = abs(index_horario_original - index)
             if horario_original < actual:
                 actual = actual - UN_DIA_EN_SEGUNDOS
-            if abs(horario_original - actual) > NOVENTA_MINUTOS * diferencia:
+            if abs(horario_original - actual) > (UNA_HORA * diferencia):
                 index_eliminar.append(index)
     if cant_horarios_posteriores > 0:
-        for index in range(
-            len(horarios_cercanos) - 1,
-            len(horarios_cercanos) - cant_horarios_posteriores - 1,
-            -1,
-        ):
+        for index in range(cant_horarios_anteriores, len(horarios_cercanos) - 1):
             actual = hora_a_segundos(horarios_cercanos[index])
-            diferencia = abs(index - index_horario_original)
-            if horario_original > actual:
-                actual = actual + UN_DIA_EN_SEGUNDOS
-            if abs(horario_original - actual) > NOVENTA_MINUTOS * diferencia:
-                index_eliminar.append(index)
+            siguiente = hora_a_segundos(horarios_cercanos[index + 1])
+            if actual > siguiente:
+                siguiente = siguiente + UN_DIA_EN_SEGUNDOS
+            if siguiente - actual > UNA_HORA:
+                for index_a_eliminar in range(index + 1, len(horarios_cercanos)):
+                    index_eliminar.append(index_a_eliminar)
+                break
+
     index_eliminar.sort()
+
     for index in reversed(index_eliminar):
         del horarios_cercanos[index]
 
@@ -114,25 +120,29 @@ def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
     tipo_dia_actual = horario_teorico[0]
 
     cant_horarios_anteriores = 0
-    for index, horario_anterior in enumerate(islice(
-        cycle(reversed(lista_horarios)), largo_lista_horarios -
-        index_horario, None
-    )):
+    for index, horario_anterior in enumerate(
+        islice(
+            cycle(reversed(lista_horarios)), largo_lista_horarios - index_horario, None
+        )
+    ):
         horario_anterior_datetime = hora_int_a_datetime(horario_anterior[1])
         tipo_dia_anterior = horario_anterior[0]
         if (
             tipo_dia_anterior == tipo_dia_actual
             and horario_anterior_datetime not in horarios_cercanos
+            and horario_anterior_datetime != hora_int_a_datetime(horario_teorico[1])
         ):
             cant_horarios_anteriores += 1
             horarios_cercanos.append(horario_anterior_datetime)
-        if cant_horarios_anteriores == 1 or index >= largo_lista_horarios - 2:
+        if cant_horarios_anteriores == 1 or index >= largo_lista_horarios:
             break
 
     horarios_cercanos.append(hora_int_a_datetime(horario_teorico[1]))
 
     cant_horarios_posteriores = 0
-    for index, horario_posterior in enumerate(islice(cycle(lista_horarios), index_horario + 1, None)):
+    for index, horario_posterior in enumerate(
+        islice(cycle(lista_horarios), index_horario + 1, None)
+    ):
         horario_posterior_datetime = hora_int_a_datetime(horario_posterior[1])
         tipo_dia_posterior = horario_posterior[0]
         if (
@@ -143,7 +153,6 @@ def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
             horarios_cercanos.append(horario_posterior_datetime)
         if cant_horarios_posteriores == 2 or index >= largo_lista_horarios - 2:
             break
-
     horarios_cercanos = eliminar_outliers(
         horarios_cercanos, cant_horarios_anteriores, cant_horarios_posteriores
     )
