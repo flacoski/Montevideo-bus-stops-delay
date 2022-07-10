@@ -30,7 +30,7 @@ def comparar_horarios(horario_real, horario_teorico, frecuencia, margen):
     tipo_dia_teorico = horario_teorico[0]
     hora_teorica = horario_teorico[1]
     formato_fecha = "%Y-%m-%dT%H:%M:%S.%f%z"
-    fecha_completa = datetime.strptime(horario_real, formato_fecha)
+    fecha_completa = datetime.datetime.strptime(horario_real, formato_fecha)
     # caso borde entre tipos de dia
     if tipo_dia(fecha_completa.date()) != tipo_dia_teorico:
         return None
@@ -170,6 +170,7 @@ def agregar_desviacion(
     cod_variante,
     desviacion,
     linea_empresa,
+    cantidad_viajes,
 ):
     if nombre_avenida in res_parcial_avenida:
         if cod_parada in res_parcial_avenida[nombre_avenida]:
@@ -179,20 +180,23 @@ def agregar_desviacion(
                     * res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][1]
                     + desviacion
                 ) / (
-                    res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][1] + 1
+                    res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][1]
+                    + cantidad_viajes
                 )
-                res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][1] += 1
+                res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][
+                    1
+                ] += cantidad_viajes
             else:
                 res_parcial_avenida[nombre_avenida][cod_parada][cod_variante] = [
                     desviacion,
-                    1,
+                    cantidad_viajes,
                     linea_empresa,
                 ]  # desviacion,cantidad,linea y empresa
         else:
             res_parcial_avenida[nombre_avenida][cod_parada] = {}
             res_parcial_avenida[nombre_avenida][cod_parada][cod_variante] = [
                 desviacion,
-                1,
+                cantidad_viajes,
                 linea_empresa,
             ]  # desviacion,cantidad,linea y empresa
     else:
@@ -200,6 +204,7 @@ def agregar_desviacion(
         res_parcial_avenida[nombre_avenida][cod_parada] = {}
         res_parcial_avenida[nombre_avenida][cod_parada][cod_variante] = [
             desviacion,
-            1,
+            cantidad_viajes,
             linea_empresa,
         ]  # desviacion,cantidad,linea y empresa
+    return res_parcial_avenida
