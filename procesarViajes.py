@@ -5,7 +5,7 @@ import pdb
 import funciones_auxiliares as func
 import sys
 
-NUMERO_DE_PROCESOS = 8
+NUMERO_DE_PROCESOS = 4
 RUTA_ARCHIVO_VIAJES = "datos/viajes/viajes_stm_052022.csv"
 RUTA_ARCHIVO_HORARIOS_TEORICOS = "datos/horariosOmnibus.csv"
 RUTA_ARCHIVO_HORARIOS_TEORICOS_CIRCULARES = "datos/horariosOmnibusCirculares.csv"
@@ -98,9 +98,6 @@ def obtener_horarios_teoricos(lista_paradas_avenida):
         for avenida in lista_paradas_avenida.items():
             paradas_por_avenida = avenida[1]
             for parada in paradas_por_avenida:
-                if isinstance(horario_teorico, int):
-                    pdb.set_trace()
-                    print(horario_teorico)
                 cod_parada = int(horario_teorico[3])
                 if cod_parada == parada[2]:
                     salir = True
@@ -190,7 +187,7 @@ def calcular_frecuencia(lista_horarios_teoricos_parada):
                 horario_teorico.append(frecuencia)
 
 
-def calcular_desviacion(viajes, cola):
+def calcular_desviacion(viajes, lista_horarios_teoricos_parada, cola_res):
     print("arranca")
     res_parcial = {}
     for _viaje in viajes:
@@ -252,44 +249,40 @@ if __name__ == "__main__":
         )
         procesos.append(
             mp.Process(
-                target=calcular_desviacion, args=(viajes[comienzo:fin], cola_res)
+                target=calcular_desviacion, args=(viajes[comienzo:fin], lista_horarios_teoricos_parada, cola_res)
             )
         )
 
     for p in procesos:
         p.start()
 
-    for p in procesos:
-        p.join()
-
     resultado_final = {}
     final_tiempo = time.time()
     print(final_tiempo - comienzo_tiempo)
-    
-    # cont = 0
-    # for p in procesos:
-    #     resultado = cola_res.get()
-    #     print("llegue")
-    #     for avenida in resultado.items():
-    #         nombre_avenida = avenida[0]
-    #         for parada in resultado[nombre_avenida].items():
-    #             cod_parada = parada[0]
-    #             for variante in resultado[nombre_avenida][cod_parada].items():
-    #                 cod_variante = variante[0]
-    #                 desviacion = variante[1][0]
-    #                 cantidad_viajes = variante[1][1]
-    #                 linea_empresa = variante[1][2]
-    #                 resultado_final = func.agregar_desviacion(
-    #                     resultado_final,
-    #                     nombre_avenida,
-    #                     cod_parada,
-    #                     cod_variante,
-    #                     desviacion,
-    #                     linea_empresa,
-    #                     cantidad_viajes,
-    #                 )
-    #                 cont += 1
-    #                 print(cont)
-
+    cont = 0
+    for p in procesos:
+        resultado = cola_res.get()
+        print("llegue")
+        for avenida in resultado.items():
+            nombre_avenida = avenida[0]
+            for parada in resultado[nombre_avenida].items():
+                cod_parada = parada[0]
+                for variante in resultado[nombre_avenida][cod_parada].items():
+                    cod_variante = variante[0]
+                    desviacion = variante[1][0]
+                    cantidad_viajes = variante[1][1]
+                    linea_empresa = variante[1][2]
+                    resultado_final = func.agregar_desviacion(
+                        resultado_final,
+                        nombre_avenida,
+                        cod_parada,
+                        cod_variante,
+                        desviacion,
+                        linea_empresa,
+                        cantidad_viajes,
+                    )
+                    cont += 1
 
     print(resultado_final)
+    final_tiempo = time.time()
+    print(final_tiempo - comienzo_tiempo)
