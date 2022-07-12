@@ -162,49 +162,44 @@ def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
         else DEFAULT_FRECUENCIA_EN_SEGUNDOS
     )
 
-
 def agregar_desviacion(
     res_parcial_avenida,
     nombre_avenida,
     cod_parada,
-    cod_variante,
     desviacion,
     linea_empresa,
     cantidad_viajes,
 ):
     if nombre_avenida in res_parcial_avenida:
         if cod_parada in res_parcial_avenida[nombre_avenida]:
-            if cod_variante in res_parcial_avenida[nombre_avenida][cod_parada]:
-                res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][0] = (
-                    res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][0]
-                    * res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][1]
+            if linea_empresa in res_parcial_avenida[nombre_avenida][cod_parada]:
+                res_parcial_avenida[nombre_avenida][cod_parada][linea_empresa][0] = (
+                    res_parcial_avenida[nombre_avenida][cod_parada][linea_empresa][0]
+                    * res_parcial_avenida[nombre_avenida][cod_parada][linea_empresa][1]
                     + desviacion
                 ) / (
-                    res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][1]
+                    res_parcial_avenida[nombre_avenida][cod_parada][linea_empresa][1]
                     + cantidad_viajes
                 )
-                res_parcial_avenida[nombre_avenida][cod_parada][cod_variante][
+                res_parcial_avenida[nombre_avenida][cod_parada][linea_empresa][
                     1
                 ] += cantidad_viajes
             else:
-                res_parcial_avenida[nombre_avenida][cod_parada][cod_variante] = [
+                res_parcial_avenida[nombre_avenida][cod_parada][linea_empresa] = [
                     desviacion,
                     cantidad_viajes,
-                    linea_empresa,
-                ]  # desviacion,cantidad,linea y empresa
+                ]  # desviacion,cantidad viajes
         else:
             res_parcial_avenida[nombre_avenida][cod_parada] = {}
-            res_parcial_avenida[nombre_avenida][cod_parada][cod_variante] = [
+            res_parcial_avenida[nombre_avenida][cod_parada][linea_empresa] = [
                 desviacion,
                 cantidad_viajes,
-                linea_empresa,
-            ]  # desviacion,cantidad,linea y empresa
+            ]  # desviacion,cantidad viajes
     else:
         res_parcial_avenida[nombre_avenida] = {}
         res_parcial_avenida[nombre_avenida][cod_parada] = {}
-        res_parcial_avenida[nombre_avenida][cod_parada][cod_variante] = [
+        res_parcial_avenida[nombre_avenida][cod_parada][linea_empresa] = [
             desviacion,
             cantidad_viajes,
-            linea_empresa,
-        ]  # desviacion,cantidad,linea y empresa
+        ]  # desviacion,cantidad viajes
     return res_parcial_avenida

@@ -1,11 +1,9 @@
 from ctypes.util import find_library
 import multiprocessing as mp
 import time
-import pdb
 import funciones_auxiliares as func
-import sys
 
-NUMERO_DE_PROCESOS = 4
+NUMERO_DE_PROCESOS = 8
 RUTA_ARCHIVO_VIAJES = "datos/viajes/viajes_stm_052022.csv"
 RUTA_ARCHIVO_HORARIOS_TEORICOS = "datos/horariosOmnibus.csv"
 RUTA_ARCHIVO_HORARIOS_TEORICOS_CIRCULARES = "datos/horariosOmnibusCirculares.csv"
@@ -188,7 +186,6 @@ def calcular_frecuencia(lista_horarios_teoricos_parada):
 
 
 def calcular_desviacion(viajes, lista_horarios_teoricos_parada, cola_res):
-    print("arranca")
     res_parcial = {}
     for _viaje in viajes:
         viaje = _viaje.split(",")
@@ -213,7 +210,6 @@ def calcular_desviacion(viajes, lista_horarios_teoricos_parada, cola_res):
                             res_parcial,
                             nombre_avenida,
                             cod_parada,
-                            cod_variante,
                             desviacion,
                             linea_empresa,
                             1,
@@ -238,7 +234,6 @@ if __name__ == "__main__":
     viajes = viajes[1:]
     cant_viajes_por_proceso = int(len(viajes) / NUMERO_DE_PROCESOS)
     procesos = []
-    # manager = mp.Manager()
     cola_res = mp.Queue()
     for nro_proceso in range(NUMERO_DE_PROCESOS):
         comienzo = nro_proceso * cant_viajes_por_proceso
@@ -257,31 +252,24 @@ if __name__ == "__main__":
         p.start()
 
     resultado_final = {}
-    final_tiempo = time.time()
-    print(final_tiempo - comienzo_tiempo)
-    cont = 0
     for p in procesos:
         resultado = cola_res.get()
-        print("llegue")
         for avenida in resultado.items():
             nombre_avenida = avenida[0]
             for parada in resultado[nombre_avenida].items():
                 cod_parada = parada[0]
-                for variante in resultado[nombre_avenida][cod_parada].items():
-                    cod_variante = variante[0]
-                    desviacion = variante[1][0]
-                    cantidad_viajes = variante[1][1]
-                    linea_empresa = variante[1][2]
+                for linea_empresa in resultado[nombre_avenida][cod_parada].items():
+                    linea_empresa_id = linea_empresa[0]
+                    desviacion = linea_empresa[1][0]
+                    cantidad_viajes = linea_empresa[1][1]
                     resultado_final = func.agregar_desviacion(
                         resultado_final,
                         nombre_avenida,
                         cod_parada,
-                        cod_variante,
                         desviacion,
-                        linea_empresa,
+                        linea_empresa_id,
                         cantidad_viajes,
                     )
-                    cont += 1
 
     print(resultado_final)
     final_tiempo = time.time()
