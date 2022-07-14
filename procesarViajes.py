@@ -83,7 +83,7 @@ def obtener_paradas_mas_vendidas(lista_paradas_contador):
 
 def obtener_horarios_teoricos(lista_paradas_avenida):
     # key = codigo_parada, value = diccionario_parada
-    # diccionario_parada: key = cod_parada, values = [tipo_dia_teorico, horario_teorico, nombre_avenida]
+    # diccionario_parada: key = cod_parada, values = [tipo_dia_teorico, horario_teorico, nombre_avenida, nombre_interseccion]
     lista_horarios_teoricos_parada = {}
 
     # Recorrer los horarios teóricos y quedarnos solo con aquellos que pertenezcan a las paradas relevantes
@@ -103,21 +103,37 @@ def obtener_horarios_teoricos(lista_paradas_avenida):
                     cod_variante = int(horario_teorico[1])
                     horario_teorico_aux = int(horario_teorico[5])
                     nombre_avenida = avenida[0]
+                    nombre_interseccion = parada[1]
                     if cod_parada in lista_horarios_teoricos_parada:
                         if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
                             lista_horarios_teoricos_parada[cod_parada][
                                 cod_variante
                             ].append(
-                                [tipo_dia_teorico, horario_teorico_aux, nombre_avenida]
+                                [
+                                    tipo_dia_teorico,
+                                    horario_teorico_aux,
+                                    nombre_avenida,
+                                    nombre_interseccion,
+                                ]
                             )
                         else:
                             lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
-                                [tipo_dia_teorico, horario_teorico_aux, nombre_avenida]
+                                [
+                                    tipo_dia_teorico,
+                                    horario_teorico_aux,
+                                    nombre_avenida,
+                                    nombre_interseccion,
+                                ]
                             ]
                     else:
                         lista_horarios_teoricos_parada[cod_parada] = {}
                         lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
-                            [tipo_dia_teorico, horario_teorico_aux, nombre_avenida]
+                            [
+                                tipo_dia_teorico,
+                                horario_teorico_aux,
+                                nombre_avenida,
+                                nombre_interseccion,
+                            ]
                         ]
                     break
             if salir:
@@ -143,21 +159,37 @@ def obtener_horarios_teoricos(lista_paradas_avenida):
                     cod_variante = int(horario_teorico[4])
                     horario_teorico_aux = int(horario_teorico[7])
                     nombre_avenida = avenida[0]
+                    nombre_interseccion = parada[1]
                     if cod_parada in lista_horarios_teoricos_parada:
                         if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
                             lista_horarios_teoricos_parada[cod_parada][
                                 cod_variante
                             ].append(
-                                [tipo_dia_teorico, horario_teorico_aux, nombre_avenida]
+                                [
+                                    tipo_dia_teorico,
+                                    horario_teorico_aux,
+                                    nombre_avenida,
+                                    nombre_interseccion,
+                                ]
                             )
                         else:
                             lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
-                                [tipo_dia_teorico, horario_teorico_aux, nombre_avenida]
+                                [
+                                    tipo_dia_teorico,
+                                    horario_teorico_aux,
+                                    nombre_avenida,
+                                    nombre_interseccion,
+                                ]
                             ]
                     else:
                         lista_horarios_teoricos_parada[cod_parada] = {}
                         lista_horarios_teoricos_parada[cod_parada][cod_variante] = [
-                            [tipo_dia_teorico, horario_teorico_aux, nombre_avenida]
+                            [
+                                tipo_dia_teorico,
+                                horario_teorico_aux,
+                                nombre_avenida,
+                                nombre_interseccion,
+                            ]
                         ]
                     break
         if salir:
@@ -202,9 +234,7 @@ def calcular_desviacion(viajes, lista_horarios_teoricos_parada, cola_res):
                         horario_real, horario_teorico, frecuencia, DEFAULT_MARGEN
                     )
                     if desviacion != None:
-                        nombre_avenida = lista_horarios_teoricos_parada[cod_parada][
-                            cod_variante
-                        ][0][2]
+                        nombre_avenida = horario_teorico[2]
                         linea_empresa = viaje[13] + " " + viaje[15]
                         res_parcial = func.agregar_desviacion(
                             res_parcial,
@@ -215,6 +245,41 @@ def calcular_desviacion(viajes, lista_horarios_teoricos_parada, cola_res):
                             1,
                         )
                         break
+    cola_res.put(res_parcial)
+
+
+def calcular_desviacion_por_dia_hora(viajes, lista_horarios_teoricos_parada, cola_res):
+    res_parcial = {}
+    for _viaje in viajes:
+        viaje = _viaje.split(",")
+        cod_parada = int(viaje[11])
+        cod_variante = int(viaje[16])
+        if cod_parada in lista_horarios_teoricos_parada:
+            if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
+                for horario_teorico in lista_horarios_teoricos_parada[cod_parada][
+                    cod_variante
+                ]:
+                    frecuencia = horario_teorico[4]
+                    horario_real = viaje[2]
+                    desviacion = func.comparar_horarios(
+                        horario_real, horario_teorico, frecuencia, DEFAULT_MARGEN
+                    )
+                    if desviacion != None:
+                        nombre_interseccion = horario_teorico[3]
+                        dia_de_la_semana = func.obtener_dia_semana(horario_real)
+                        franja_horaria = func.obtener_franja_horaria(horario_real)
+                        nombre_avenida = horario_teorico[2]
+                        linea_empresa = viaje[13] + " " + viaje[15]
+                        res_parcial = func.agregar_desviacion_dia_hora(
+                            res_parcial,
+                            nombre_avenida,
+                            str(cod_parada) + " " + nombre_interseccion,
+                            desviacion,
+                            linea_empresa,
+                            1,
+                            dia_de_la_semana,
+                            franja_horaria,
+                        )
     cola_res.put(res_parcial)
 
 
@@ -244,7 +309,8 @@ if __name__ == "__main__":
         )
         procesos.append(
             mp.Process(
-                target=calcular_desviacion, args=(viajes[comienzo:fin], lista_horarios_teoricos_parada, cola_res)
+                target=calcular_desviacion_por_dia_hora,
+                args=(viajes[comienzo:fin], lista_horarios_teoricos_parada, cola_res),
             )
         )
 
@@ -252,24 +318,54 @@ if __name__ == "__main__":
         p.start()
 
     resultado_final = {}
+    # for p in procesos:
+    #     resultado = cola_res.get()
+    #     print("nuevo res")
+    #     for avenida in resultado.items():
+    #         nombre_avenida = avenida[0]
+    #         for parada in resultado[nombre_avenida].items():
+    #             cod_parada = parada[0]
+    #             for linea_empresa in resultado[nombre_avenida][cod_parada].items():
+    #                 linea_empresa_id = linea_empresa[0]
+    #                 desviacion = linea_empresa[1][0]
+    #                 cantidad_viajes = linea_empresa[1][1]
+    #                 resultado_final = func.agregar_desviacion(
+    #                     resultado_final,
+    #                     nombre_avenida,
+    #                     cod_parada,
+    #                     desviacion,
+    #                     linea_empresa_id,
+    #                     cantidad_viajes,
+    #                 )
+
     for p in procesos:
         resultado = cola_res.get()
         for avenida in resultado.items():
             nombre_avenida = avenida[0]
-            for parada in resultado[nombre_avenida].items():
-                cod_parada = parada[0]
-                for linea_empresa in resultado[nombre_avenida][cod_parada].items():
-                    linea_empresa_id = linea_empresa[0]
-                    desviacion = linea_empresa[1][0]
-                    cantidad_viajes = linea_empresa[1][1]
-                    resultado_final = func.agregar_desviacion(
-                        resultado_final,
-                        nombre_avenida,
-                        cod_parada,
-                        desviacion,
-                        linea_empresa_id,
-                        cantidad_viajes,
-                    )
+            for dia in resultado[nombre_avenida].items():
+                tipo_dia = dia[0]
+                for franja in resultado[nombre_avenida][tipo_dia].items():
+                    franja_horaria = franja[0]
+                    for parada in resultado[nombre_avenida][tipo_dia][
+                        franja_horaria
+                    ].items():
+                        cod_parada = parada[0]
+                        for linea_empresa in resultado[nombre_avenida][tipo_dia][
+                            franja_horaria
+                        ][cod_parada].items():
+                            linea_empresa_id = linea_empresa[0]
+                            desviacion = linea_empresa[1][0]
+                            cantidad_viajes = linea_empresa[1][1]
+                            resultado_final = func.agregar_desviacion_dia_hora(
+                                resultado_final,
+                                nombre_avenida,
+                                cod_parada,
+                                desviacion,
+                                linea_empresa_id,
+                                cantidad_viajes,
+                                tipo_dia,
+                                franja_horaria,
+                            )
 
     print(resultado_final)
     final_tiempo = time.time()
