@@ -266,15 +266,10 @@ def agregar_desviacion_dia_hora(
     else:
         res_parcial_avenida[nombre_avenida] = {}
         dias = [
-            "Lunes",
-            "Martes",
-            "Miercoles",
-            "Jueves",
-            "Viernes",
-            "Sabado",
-            "Domingo",
+            "Semana",
+            "Fin de Semana",
         ]
-        franjas = ["Franja 6-10", "Franja 10-16", "Franja 16-20", "Franja 20-6"]
+        franjas = ["Horas pico 8-10 y 17-19", "Horas tranquilas"]
         for dia in dias:
             res_parcial_avenida[nombre_avenida][dia] = {}
             for franja in franjas:
@@ -295,31 +290,17 @@ def obtener_dia_semana(horario_real):
     formato_fecha = "%Y-%m-%dT%H:%M:%S.%f%z"
     fecha_completa = datetime.datetime.strptime(horario_real, formato_fecha)
     dia_numero = fecha_completa.date().weekday()
-    if dia_numero == 0:
-        return "Lunes"
-    elif dia_numero == 1:
-        return "Martes"
-    elif dia_numero == 2:
-        return "Miercoles"
-    elif dia_numero == 3:
-        return "Jueves"
-    elif dia_numero == 4:
-        return "Viernes"
-    elif dia_numero == 5:
-        return "Sabado"
-    elif dia_numero == 6:
-        return "Domingo"
+    if dia_numero < 5:
+        return "Semana"
+    else:
+        return "Fin de Semana"
 
 
 def obtener_franja_horaria(horario_real):
     formato_fecha = "%Y-%m-%dT%H:%M:%S.%f%z"
     fecha_completa = datetime.datetime.strptime(horario_real, formato_fecha)
     hora = fecha_completa.time().hour
-    if hora >= 6 and hora < 10:
-        return "Franja 6-10"
-    elif hora >= 10 and hora < 16:
-        return "Franja 10-16"
-    elif hora >= 16 and hora < 20:
-        return "Franja 16-20"
-    elif hora >= 20 or hora < 6:
-        return "Franja 20-6"
+    if hora >= 8 and hora < 10 or hora >= 17 and hora < 19:
+        return "Horas pico 8-10 y 17-19"
+    else:
+        return "Horas tranquilas"

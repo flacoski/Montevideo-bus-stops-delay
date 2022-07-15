@@ -3,7 +3,7 @@ import multiprocessing as mp
 import time
 import funciones_auxiliares as func
 
-NUMERO_DE_PROCESOS = 8
+NUMERO_DE_PROCESOS = 6
 RUTA_ARCHIVO_VIAJES = "datos/viajes/viajes_stm_052022.csv"
 RUTA_ARCHIVO_HORARIOS_TEORICOS = "datos/horariosOmnibus.csv"
 RUTA_ARCHIVO_HORARIOS_TEORICOS_CIRCULARES = "datos/horariosOmnibusCirculares.csv"
