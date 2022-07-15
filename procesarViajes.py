@@ -217,37 +217,6 @@ def calcular_frecuencia(lista_horarios_teoricos_parada):
                 horario_teorico.append(frecuencia)
 
 
-def calcular_desviacion(viajes, lista_horarios_teoricos_parada, cola_res):
-    res_parcial = {}
-    for _viaje in viajes:
-        viaje = _viaje.split(",")
-        cod_parada = int(viaje[11])
-        cod_variante = int(viaje[16])
-        if cod_parada in lista_horarios_teoricos_parada:
-            if cod_variante in lista_horarios_teoricos_parada[cod_parada]:
-                for horario_teorico in lista_horarios_teoricos_parada[cod_parada][
-                    cod_variante
-                ]:
-                    frecuencia = horario_teorico[3]
-                    horario_real = viaje[2]
-                    desviacion = func.comparar_horarios(
-                        horario_real, horario_teorico, frecuencia, DEFAULT_MARGEN
-                    )
-                    if desviacion != None:
-                        nombre_avenida = horario_teorico[2]
-                        linea_empresa = viaje[13] + " " + viaje[15]
-                        res_parcial = func.agregar_desviacion(
-                            res_parcial,
-                            nombre_avenida,
-                            cod_parada,
-                            desviacion,
-                            linea_empresa,
-                            1,
-                        )
-                        break
-    cola_res.put(res_parcial)
-
-
 def calcular_desviacion_por_dia_hora(viajes, lista_horarios_teoricos_parada, cola_res):
     res_parcial = {}
     for _viaje in viajes:
@@ -318,26 +287,6 @@ if __name__ == "__main__":
         p.start()
 
     resultado_final = {}
-    # for p in procesos:
-    #     resultado = cola_res.get()
-    #     print("nuevo res")
-    #     for avenida in resultado.items():
-    #         nombre_avenida = avenida[0]
-    #         for parada in resultado[nombre_avenida].items():
-    #             cod_parada = parada[0]
-    #             for linea_empresa in resultado[nombre_avenida][cod_parada].items():
-    #                 linea_empresa_id = linea_empresa[0]
-    #                 desviacion = linea_empresa[1][0]
-    #                 cantidad_viajes = linea_empresa[1][1]
-    #                 resultado_final = func.agregar_desviacion(
-    #                     resultado_final,
-    #                     nombre_avenida,
-    #                     cod_parada,
-    #                     desviacion,
-    #                     linea_empresa_id,
-    #                     cantidad_viajes,
-    #                 )
-
     for p in procesos:
         resultado = cola_res.get()
         for avenida in resultado.items():
