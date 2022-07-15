@@ -4,16 +4,17 @@ import funciones_viajes as func_v
 
 NUMERO_DE_PROCESOS = 6
 RUTA_ARCHIVO_VIAJES = "datos/viajes/viajes_stm_052022.csv"
+DESVIACION_SIGNIFICATIVA_SEGUNDOS = 360
 
 if __name__ == "__main__":
     comienzo_tiempo = time.time()
     lista_avenidas = ["AV GRAL RIVERA"]
     lista_paradas_contador = func_v.obtener_paradas_avenida(lista_avenidas)
-    lista_paradas_avenida = func_v.obtener_paradas_mas_vendidas(
-        lista_paradas_contador)
+    lista_paradas_avenida = func_v.obtener_paradas_mas_vendidas(lista_paradas_contador)
     del lista_paradas_contador
     lista_horarios_teoricos_parada = func_v.obtener_horarios_teoricos(
-        lista_paradas_avenida)
+        lista_paradas_avenida
+    )
     del lista_paradas_avenida
     func_v.calcular_frecuencias(lista_horarios_teoricos_parada)
 
@@ -34,8 +35,7 @@ if __name__ == "__main__":
         procesos.append(
             mp.Process(
                 target=func_v.calcular_desviacion_por_dia_hora,
-                args=(viajes[comienzo:fin],
-                      lista_horarios_teoricos_parada, cola_res),
+                args=(viajes[comienzo:fin], lista_horarios_teoricos_parada, cola_res),
             )
         )
 
@@ -43,6 +43,8 @@ if __name__ == "__main__":
         p.start()
 
     resultado_final = {}
+    cantidad_viajes_total = 0
+    cantidad_viajes_desviacion_significativa = 0
     for p in procesos:
         resultado = cola_res.get()
         for avenida in resultado.items():
@@ -71,7 +73,16 @@ if __name__ == "__main__":
                                 tipo_dia,
                                 franja_horaria,
                             )
+                            if desviacion > DESVIACION_SIGNIFICATIVA_SEGUNDOS:
+                                cantidad_viajes_desviacion_significativa += (
+                                    cantidad_viajes
+                                )
+                            cantidad_viajes_total += cantidad_viajes
 
     print(resultado_final)
     final_tiempo = time.time()
-    print(final_tiempo - comienzo_tiempo)
+    print(
+        "La cantidad porcentual de viajes con una demora significativa es: ",
+        cantidad_viajes_desviacion_significativa / cantidad_viajes_total,
+    )
+    print("El tiempo de ejecución es: ", final_tiempo - comienzo_tiempo, "s")

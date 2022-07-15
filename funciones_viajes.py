@@ -17,8 +17,7 @@ def eliminar_outliers(
 ):
     index_eliminar = []
     index_horario_original = cant_horarios_anteriores
-    horario_original = func_h.hora_a_segundos(
-        horarios_cercanos[index_horario_original])
+    horario_original = func_h.hora_a_segundos(horarios_cercanos[index_horario_original])
     if cant_horarios_anteriores > 0:
         for index in range(0, cant_horarios_anteriores):
             actual = func_h.hora_a_segundos(horarios_cercanos[index])
@@ -54,17 +53,16 @@ def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
     cant_horarios_anteriores = 0
     for index, horario_anterior in enumerate(
         islice(
-            cycle(reversed(lista_horarios)), largo_lista_horarios -
-            index_horario, None
+            cycle(reversed(lista_horarios)), largo_lista_horarios - index_horario, None
         )
     ):
-        horario_anterior_datetime = func_h.hora_int_a_datetime(
-            horario_anterior[1])
+        horario_anterior_datetime = func_h.hora_int_a_datetime(horario_anterior[1])
         tipo_dia_anterior = horario_anterior[0]
         if (
             tipo_dia_anterior == tipo_dia_actual
             and horario_anterior_datetime not in horarios_cercanos
-            and horario_anterior_datetime != func_h.hora_int_a_datetime(horario_teorico[1])
+            and horario_anterior_datetime
+            != func_h.hora_int_a_datetime(horario_teorico[1])
         ):
             cant_horarios_anteriores += 1
             horarios_cercanos.append(horario_anterior_datetime)
@@ -77,8 +75,7 @@ def calcular_frecuencia(horario_teorico, index_horario, lista_horarios):
     for index, horario_posterior in enumerate(
         islice(cycle(lista_horarios), index_horario + 1, None)
     ):
-        horario_posterior_datetime = func_h.hora_int_a_datetime(
-            horario_posterior[1])
+        horario_posterior_datetime = func_h.hora_int_a_datetime(horario_posterior[1])
         tipo_dia_posterior = horario_posterior[0]
         if (
             tipo_dia_posterior == tipo_dia_actual
@@ -202,8 +199,7 @@ def obtener_paradas_avenida(lista_avenidas):
         nombre_avenida = parada[4]
         calle_2 = parada[5]
         if nombre_avenida in lista_avenidas:
-            lista_paradas_contador[int(parada[0])] = [
-                0, nombre_avenida, calle_2]
+            lista_paradas_contador[int(parada[0])] = [0, nombre_avenida, calle_2]
     archivo_paradas.close()
 
     # Recorremos los viajes y le sumamos uno al contador de cada parada
@@ -402,10 +398,8 @@ def calcular_desviacion_por_dia_hora(viajes, lista_horarios_teoricos_parada, col
                     )
                     if desviacion != None:
                         nombre_interseccion = horario_teorico[3]
-                        dia_de_la_semana = func_h.obtener_dia_semana(
-                            horario_real)
-                        franja_horaria = func_h.obtener_franja_horaria(
-                            horario_real)
+                        dia_de_la_semana = func_h.obtener_dia_semana(horario_real)
+                        franja_horaria = func_h.obtener_franja_horaria(horario_real)
                         nombre_avenida = horario_teorico[2]
                         linea_empresa = viaje[13] + " " + viaje[15]
                         res_parcial = agregar_desviacion_dia_hora(
