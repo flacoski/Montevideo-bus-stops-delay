@@ -4,8 +4,8 @@ import time
 import funciones_viajes as func_v
 import estadisticas
 import json
+from config import *
 
-NUMERO_DE_PROCESOS = 4
 RUTA_ARCHIVO_VIAJES = "datos/viajes/viajes_stm_052022.csv"
 
 if __name__ == "__main__":
@@ -86,7 +86,7 @@ if __name__ == "__main__":
     f.write(json.dumps(estadisticas.semana_vs_findes(resultado_final)))
     f.write("\n")
     f.write("comparativa de desviaciones de linea en avenidas:\n")
-    f.write(json.dumps(estadisticas.comparativa_linea_avenidas(resultado_final, 'C.U.T.C.S.A. 109')))
+    f.write(json.dumps(estadisticas.comparativa_linea_avenidas(resultado_final, LINEA_OMNIBUS_ANALISIS)))
     f.write("\n")
     f.write("porcentajes de demoras significativas por avenida: \n")
     f.write(json.dumps(estadisticas.porcentaje_demoras_significativas(resultado_final)))

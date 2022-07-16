@@ -1,10 +1,9 @@
 from itertools import islice, cycle
 import funciones_horarios as func_h
+from config import *
 
 UNA_HORA = 3600
 UN_DIA_EN_SEGUNDOS = 86400
-DEFAULT_FRECUENCIA_EN_SEGUNDOS = 1200
-DEFAULT_MARGEN = 2 / 3
 RUTA_ARCHIVO_HORARIOS_TEORICOS_CIRCULARES = "datos/horariosOmnibusCirculares.csv"
 RUTA_ARCHIVO_PARADAS = "datos/ubicacionParadas/paradas.csv"
 RUTA_ARCHIVO_AVENIDAS = "listaAvenidas"

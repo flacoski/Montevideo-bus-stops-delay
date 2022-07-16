@@ -1,6 +1,4 @@
-
-DESVIACION_POS_SIGNIFICATIVA_SEGUNDOS = 300
-DESVIACION_NEG_SIGNIFICATIVA_SEGUNDOS = -180
+from config import *
 
 def horas_picos_vs_tranquilas_en_semana(resultado_final):
     resultado = {}
