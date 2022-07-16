@@ -125,7 +125,7 @@ def agregar_desviacion_dia_hora(
                     * res_parcial_avenida[nombre_avenida][dia_de_la_semana][
                         franja_horaria
                     ][cod_parada][linea_empresa][1]
-                    + desviacion
+                    + desviacion * cantidad_viajes
                 ) / (
                     res_parcial_avenida[nombre_avenida][dia_de_la_semana][
                         franja_horaria
@@ -179,7 +179,6 @@ def obtener_avenidas():
     lista_avenidas = []
     archivo_avenidas = open(RUTA_ARCHIVO_AVENIDAS)
     filas_avenidas = archivo_avenidas.readlines()
-    filas_avenidas = filas_avenidas[1:]
     for fila in filas_avenidas:
         lista_avenidas.append(fila.rstrip("\n"))
     archivo_avenidas.close()
@@ -412,4 +411,5 @@ def calcular_desviacion_por_dia_hora(viajes, lista_horarios_teoricos_parada, col
                             dia_de_la_semana,
                             franja_horaria,
                         )
+                        break
     cola_res.put(res_parcial)

@@ -1,14 +1,16 @@
 import multiprocessing as mp
+import pdb
 import time
 import funciones_viajes as func_v
+import estadisticas
+import json
 
-NUMERO_DE_PROCESOS = 6
+NUMERO_DE_PROCESOS = 4
 RUTA_ARCHIVO_VIAJES = "datos/viajes/viajes_stm_052022.csv"
-DESVIACION_SIGNIFICATIVA_SEGUNDOS = 360
 
 if __name__ == "__main__":
     comienzo_tiempo = time.time()
-    lista_avenidas = ["AV GRAL RIVERA"]
+    lista_avenidas = func_v.obtener_avenidas()
     lista_paradas_contador = func_v.obtener_paradas_avenida(lista_avenidas)
     lista_paradas_avenida = func_v.obtener_paradas_mas_vendidas(lista_paradas_contador)
     del lista_paradas_contador
@@ -43,8 +45,6 @@ if __name__ == "__main__":
         p.start()
 
     resultado_final = {}
-    cantidad_viajes_total = 0
-    cantidad_viajes_desviacion_significativa = 0
     for p in procesos:
         resultado = cola_res.get()
         for avenida in resultado.items():
@@ -73,16 +73,24 @@ if __name__ == "__main__":
                                 tipo_dia,
                                 franja_horaria,
                             )
-                            if desviacion > DESVIACION_SIGNIFICATIVA_SEGUNDOS:
-                                cantidad_viajes_desviacion_significativa += (
-                                    cantidad_viajes
-                                )
-                            cantidad_viajes_total += cantidad_viajes
 
-    print(resultado_final)
+    f = open("resultados/resultado_final", "w")
+    f.write(json.dumps(resultado_final))
+    f.close()
+
+    f = open("resultados/estadisticas", "w")
+    f.write("desviaciones promedio horas picos vs horas tranquilas en la semana: \n")
+    f.write(json.dumps(estadisticas.horas_picos_vs_tranquilas_en_semana(resultado_final)))
+    f.write("\n")
+    f.write("desviaciones promedios semana vs fin de semana: \n")
+    f.write(json.dumps(estadisticas.semana_vs_findes(resultado_final)))
+    f.write("\n")
+    f.write("comparativa de desviaciones de linea en avenidas:\n")
+    f.write(json.dumps(estadisticas.comparativa_linea_avenidas(resultado_final, 'C.U.T.C.S.A. 109')))
+    f.write("\n")
+    f.write("porcentajes de demoras significativas por avenida: \n")
+    f.write(json.dumps(estadisticas.porcentaje_demoras_significativas(resultado_final)))
+    f.write("\n")
+
     final_tiempo = time.time()
-    print(
-        "La cantidad porcentual de viajes con una demora significativa es: ",
-        cantidad_viajes_desviacion_significativa / cantidad_viajes_total,
-    )
     print("El tiempo de ejecución es: ", final_tiempo - comienzo_tiempo, "s")
