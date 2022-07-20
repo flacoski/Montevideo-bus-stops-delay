@@ -157,7 +157,7 @@ def agregar_desviacion_dia_hora(
             "Semana",
             "Fin de Semana",
         ]
-        franjas = ["Horas pico 7-9,12-14,16-19", "Horas tranquilas","Madrugada 0-6"]
+        franjas = ["Horas pico 7-9,12-14,16-19", "Horas tranquilas", "Madrugada 0-6"]
         for dia in dias:
             res_parcial_avenida[nombre_avenida][dia] = {}
             for franja in franjas:
