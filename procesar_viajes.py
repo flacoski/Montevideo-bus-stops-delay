@@ -7,8 +7,8 @@ import json
 from config import *
 
 RUTAS_ARCHIVO_VIAJES = [
-    "datos/viajes/viajes_stm_032022.csv",
-    "datos/viajes/viajes_stm_042022.csv",
+    # "datos/viajes/viajes_stm_032022.csv",
+    # "datos/viajes/viajes_stm_042022.csv",
     "datos/viajes/viajes_stm_052022.csv",
 ]
 

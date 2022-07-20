@@ -93,7 +93,9 @@ def obtener_franja_horaria(horario_real):
     formato_fecha = "%Y-%m-%dT%H:%M:%S.%f%z"
     fecha_completa = datetime.datetime.strptime(horario_real, formato_fecha)
     hora = fecha_completa.time().hour
-    if hora >= 8 and hora < 10 or hora >= 17 and hora < 19:
-        return "Horas pico 8-10 y 17-19"
-    else:
+    if hora >= 7 and hora < 9 or hora >= 12 and hora < 14 or hora >= 16 and hora < 19:
+        return "Horas pico 7-9,12-14,16-19"
+    elif hora >= 6 and hora < 24:
         return "Horas tranquilas"
+    else:
+        return "Madrugada 0-6"
