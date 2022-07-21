@@ -1,4 +1,5 @@
 import datetime
+from config import *
 
 UNA_HORA = 3600
 UN_DIA_EN_SEGUNDOS = 86400
@@ -30,8 +31,12 @@ def comparar_horarios(horario_real, horario_teorico, frecuencia, margen):
     formato_fecha = "%Y-%m-%dT%H:%M:%S.%f%z"
     fecha_completa = datetime.datetime.strptime(horario_real, formato_fecha)
     # caso borde entre tipos de dia
-    if tipo_dia(fecha_completa.date()) != tipo_dia_teorico:
-        return None
+    if PANDEMIA:
+        if tipo_dia_teorico != 0:
+            return None
+    else:
+        if tipo_dia(fecha_completa.date()) != tipo_dia_teorico:
+            return None
     return comparar_horas(fecha_completa.time(), hora_teorica, frecuencia, margen)
 
 

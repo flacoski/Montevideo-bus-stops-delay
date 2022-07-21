@@ -233,11 +233,11 @@ def obtener_paradas_mas_vendidas(lista_paradas_contador):
                 [cant_boletos_vendidos, calle_2, cod_parada, 0, 0]
             ]
 
-    # Ordenar las paradas por cantidad de boletos vendidos(descendente) y quedarnos con las 15 primeras paradas por cada avenida
+    # Ordenar las paradas por cantidad de boletos vendidos(descendente) y quedarnos con las NUMERO_PARADAS_MAS_VENDIDAS primeras paradas por cada avenida
     for avenida in lista_paradas_avenida.items():
         paradas_en_orden = sorted(avenida[1], key=lambda x: x[0], reverse=True)
         nombre_avenida = avenida[0]
-        lista_paradas_avenida[nombre_avenida] = paradas_en_orden[0:15]
+        lista_paradas_avenida[nombre_avenida] = paradas_en_orden[0:NUMERO_PARADAS_MAS_VENDIDAS]
 
     return lista_paradas_avenida
 

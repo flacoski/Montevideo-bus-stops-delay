@@ -11,14 +11,13 @@ def horas_picos_vs_tranquilas_en_semana(resultado_final):
         }
         for franja_h in resultado_final[nombre_avenida]["Semana"].items():
             franja = franja_h[0]
-            if franja == "Madrugada":
+            if franja == "Madrugada 0-6":
                 continue
             for parada in resultado_final[nombre_avenida]["Semana"][franja].items():
                 cod_parada = parada[0]
                 for linea in resultado_final[nombre_avenida]["Semana"][franja][
                     cod_parada
                 ].items():
-                    cod_linea = linea[0]
                     actual_desviacion = resultado[nombre_avenida][franja][0]
                     actual_viajes = resultado[nombre_avenida][franja][1]
                     nueva_desviacion = linea[1][0]
@@ -47,7 +46,6 @@ def semana_vs_findes(resultado_final):
                     for linea in resultado_final[nombre_avenida][tipo_dia][franja][
                         cod_parada
                     ].items():
-                        cod_linea = linea[0]
                         actual_desviacion = resultado[nombre_avenida][tipo_dia][0]
                         actual_viajes = resultado[nombre_avenida][tipo_dia][1]
                         nueva_desviacion = linea[1][0]
@@ -69,7 +67,7 @@ def comparativa_linea_avenidas(resultado_final, linea_objetivo):
             tipo_dia = dia[0]
             for franja_h in resultado_final[nombre_avenida][tipo_dia].items():
                 franja = franja_h[0]
-                if franja == "Madrugada":
+                if franja == "Madrugada 0-6":
                     continue
                 for parada in resultado_final[nombre_avenida][tipo_dia][franja].items():
                     cod_parada = parada[0]
@@ -99,7 +97,7 @@ def porcentaje_demoras_significativas(resultado_final):
             tipo_dia = dia[0]
             for franja_h in resultado_final[nombre_avenida][tipo_dia].items():
                 franja = franja_h[0]
-                if franja == "Madrugada":
+                if franja == "Madrugada 0-6":
                     continue
                 for parada in resultado_final[nombre_avenida][tipo_dia][franja].items():
                     cod_parada = parada[0]
