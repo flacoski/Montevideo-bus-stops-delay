@@ -26,11 +26,16 @@ if __name__ == "__main__":
 
     resultado_final = {}
 
-    for ruta_archivo in RUTAS_ARCHIVO_VIAJES:
-        archivo_viajes = open(ruta_archivo)
-        viajes = archivo_viajes.readlines()
-        archivo_viajes.close()
-        viajes = viajes[1:]
+    viajes =[]
+
+    if NUMERO_DE_PROCESOS >= 4:
+        viajes =[]
+        for ruta_archivo in RUTAS_ARCHIVO_VIAJES:
+            archivo_viajes = open(ruta_archivo)
+            viajes_aux = archivo_viajes.readlines()
+            archivo_viajes.close()
+            viajes_aux = viajes_aux[1:]
+            viajes.append(viajes_aux)
         cant_viajes_por_proceso = int(len(viajes) / NUMERO_DE_PROCESOS)
         procesos = []
         cola_res = mp.Queue()
@@ -83,6 +88,64 @@ if __name__ == "__main__":
                                     tipo_dia,
                                     franja_horaria,
                                 )
+    else:
+        for ruta_archivo in RUTAS_ARCHIVO_VIAJES:
+            archivo_viajes = open(ruta_archivo)
+            viajes = archivo_viajes.readlines()
+            archivo_viajes.close()
+            viajes = viajes[1:]
+            cant_viajes_por_proceso = int(len(viajes) / NUMERO_DE_PROCESOS)
+            procesos = []
+            cola_res = mp.Queue()
+            for nro_proceso in range(NUMERO_DE_PROCESOS):
+                comienzo = nro_proceso * cant_viajes_por_proceso
+                fin = (
+                    comienzo + cant_viajes_por_proceso
+                    if nro_proceso != NUMERO_DE_PROCESOS - 1
+                    else len(viajes)
+                )
+                procesos.append(
+                    mp.Process(
+                        target=func_v.calcular_desviacion_por_dia_hora,
+                        args=(
+                            viajes[comienzo:fin],
+                            lista_horarios_teoricos_parada,
+                            cola_res,
+                        ),
+                    )
+                )
+
+            for p in procesos:
+                p.start()
+
+            for p in procesos:
+                resultado = cola_res.get()
+                for avenida in resultado.items():
+                    nombre_avenida = avenida[0]
+                    for dia in resultado[nombre_avenida].items():
+                        tipo_dia = dia[0]
+                        for franja in resultado[nombre_avenida][tipo_dia].items():
+                            franja_horaria = franja[0]
+                            for parada in resultado[nombre_avenida][tipo_dia][
+                                franja_horaria
+                            ].items():
+                                cod_parada = parada[0]
+                                for linea_empresa in resultado[nombre_avenida][tipo_dia][
+                                    franja_horaria
+                                ][cod_parada].items():
+                                    linea_empresa_id = linea_empresa[0]
+                                    desviacion = linea_empresa[1][0]
+                                    cantidad_viajes = linea_empresa[1][1]
+                                    resultado_final = func_v.agregar_desviacion_dia_hora(
+                                        resultado_final,
+                                        nombre_avenida,
+                                        cod_parada,
+                                        desviacion,
+                                        linea_empresa_id,
+                                        cantidad_viajes,
+                                        tipo_dia,
+                                        franja_horaria,
+                                    )
 
     f = open("resultados/resultado_final", "w")
     f.write(json.dumps(resultado_final))
