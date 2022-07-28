@@ -28,7 +28,7 @@ if __name__ == "__main__":
 
     viajes =[]
 
-    if NUMERO_DE_PROCESOS >= 4:
+    if NUMERO_DE_PROCESOS >= 8:
         viajes =[]
         for ruta_archivo in RUTAS_ARCHIVO_VIAJES:
             archivo_viajes = open(ruta_archivo)
