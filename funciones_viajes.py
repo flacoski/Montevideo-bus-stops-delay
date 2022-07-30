@@ -213,6 +213,26 @@ def obtener_paradas_avenida(lista_avenidas):
 
     return lista_paradas_contador
 
+def obtener_paradas_avenida_coordenada(lista_avenidas):
+    # key = codigo_parada, values = [contador_viajes,calle 1, calle 2]
+    lista_paradas_contador = {}
+
+    # Recorremos las paradas y nos quedamos con las que pertenecen a las calles elegidas
+    archivo_paradas = open(RUTA_ARCHIVO_PARADAS)
+    paradas = archivo_paradas.readlines()
+    paradas = paradas[1:]
+    for _parada in paradas:
+        parada = _parada.split(",")
+        nombre_avenida = parada[4]
+        # calle_2 = parada[5]
+        coord1 = parada[8]
+        coord2 = parada[9].replace("\n", "")
+        if nombre_avenida in lista_avenidas:
+            lista_paradas_contador[int(parada[0])] = [coord1,coord2]
+    archivo_paradas.close()
+
+    return lista_paradas_contador
+
 
 def obtener_paradas_mas_vendidas(lista_paradas_contador):
     # key = calle1, values = [contador, calle 2, codigo_parada, desviacion, cantidad_viajes]
