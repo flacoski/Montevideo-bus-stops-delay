@@ -1,7 +1,7 @@
 import datetime
-import pdb
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.ticker import ScalarFormatter
 
 RUTAS_ARCHIVO_VIAJES = [
     "datos/viajes/viajes_stm_052022.csv",
@@ -22,7 +22,12 @@ def obtener_histograma():
             hora = fecha_completa.time().hour
             cantidad_viajes_por_dia[hora] += 1
         print(cantidad_viajes_por_dia)
+    plt.xlabel('Hour of the Day')
+    plt.ylabel('Number of transactions')
     plt.bar(np.arange(len(cantidad_viajes_por_dia)), cantidad_viajes_por_dia)
+
+    ax = plt.gca()  # Get the current Axes instance
+    ax.yaxis.set_major_formatter(ScalarFormatter(useMathText=True))
     plt.savefig("histograma/histograma.png")
 
 
